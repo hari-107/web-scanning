@@ -85,35 +85,86 @@
 <div class="tab-content">
     <!-- FINDINGS -->
     <div class="tab-pane fade show active" id="tab-findings">
+        {% if findings %}
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="btn-group btn-group-sm" role="group" id="sevFilter">
+                <button class="btn btn-outline-light active" data-sev="all">All ({{ findings|length }})</button>
+                {% for sev, label in severity_labels.items %}
+                    {% with n=severity_counts|get_item:sev %}{% if n %}
+                    <button class="btn btn-outline-light" data-sev="{{ sev }}">
+                        <span class="sev-dot sev-{{ sev }}"></span> {{ label }} ({{ n }})</button>
+                    {% endif %}{% endwith %}
+                {% endfor %}
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-info" id="expandAll"><i class="bi bi-arrows-expand"></i> Expand all</button>
+                <button class="btn btn-outline-secondary" id="collapseAll"><i class="bi bi-arrows-collapse"></i> Collapse all</button>
+            </div>
+        </div>
+        {% endif %}
         {% for f in findings %}
-        <div class="ws-card mb-2 border-left-{{ f.severity }}">
-            <div class="p-3 d-flex justify-content-between align-items-center" role="button"
+        <div class="ws-card finding-card mb-2 border-left-{{ f.severity }}" data-sev="{{ f.severity }}">
+            <div class="p-3 d-flex justify-content-between align-items-center finding-head" role="button"
                  data-bs-toggle="collapse" data-bs-target="#f{{ f.id }}">
-                <div>
-                    <span class="sev-badge sev-{{ f.severity }} me-2">{{ f.get_severity_display }}</span>
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="sev-badge sev-{{ f.severity }}">{{ f.get_severity_display }}</span>
                     <strong>{{ f.title }}</strong>
-                    {% if f.parameter %}<span class="badge text-bg-secondary ms-2 mono">{{ f.parameter }}</span>{% endif %}
+                    {% if f.parameter %}<span class="badge text-bg-dark mono">param: {{ f.parameter }}</span>{% endif %}
+                    {% if f.http_method %}<span class="badge text-bg-secondary mono">{{ f.http_method }}</span>{% endif %}
+                    {% if f.cwe %}<span class="badge text-bg-secondary">{{ f.cwe }}</span>{% endif %}
                 </div>
-                <div class="small text-secondary">{{ f.detected_by }} <i class="bi bi-chevron-down"></i></div>
+                <div class="small text-secondary text-nowrap ms-2">{{ f.detected_by }} <i class="bi bi-chevron-down chev"></i></div>
             </div>
             <div class="collapse" id="f{{ f.id }}">
                 <div class="px-3 pb-3">
                     <div class="row small g-3">
-                        <div class="col-md-8">
-                            {% if f.description %}<p><strong>Description.</strong> {{ f.description }}</p>{% endif %}
-                            {% if f.impact %}<p><strong>Impact.</strong> {{ f.impact }}</p>{% endif %}
-                            {% if f.remediation %}<p><strong>Remediation.</strong> {{ f.remediation }}</p>{% endif %}
-                            {% if f.evidence %}<div><strong>Evidence</strong><div class="evidence-box mt-1">{{ f.evidence }}</div></div>{% endif %}
-                            {% if f.proof %}<div class="mt-2"><strong>Proof</strong><div class="evidence-box mt-1">{{ f.proof }}</div></div>{% endif %}
-                            {% if f.payload %}<div class="mt-2"><strong>Payload</strong><div class="evidence-box mt-1">{{ f.payload }}</div></div>{% endif %}
+                        <div class="col-lg-8">
+                            {% if f.description %}<p class="mb-2"><strong class="text-info">Description.</strong> {{ f.description }}</p>{% endif %}
+                            {% if f.impact %}<p class="mb-2"><strong class="text-info">Impact.</strong> {{ f.impact }}</p>{% endif %}
+                            {% if f.remediation %}<p class="mb-2"><strong class="text-info">Remediation.</strong> {{ f.remediation }}</p>{% endif %}
+
+                            {% if f.payload %}
+                            <div class="poc-block mt-3">
+                                <div class="poc-label"><i class="bi bi-braces"></i> Payload
+                                    <button type="button" class="copy-btn" data-copy="payload-{{ f.id }}"><i class="bi bi-clipboard"></i> copy</button></div>
+                                <pre class="code-box" id="payload-{{ f.id }}">{{ f.payload }}</pre>
+                            </div>
+                            {% endif %}
+
+                            {% if f.poc_curl %}
+                            <div class="poc-block mt-2">
+                                <div class="poc-label"><i class="bi bi-terminal"></i> Proof of Concept (curl)
+                                    <button type="button" class="copy-btn" data-copy="curl-{{ f.id }}"><i class="bi bi-clipboard"></i> copy</button></div>
+                                <pre class="code-box" id="curl-{{ f.id }}">{{ f.poc_curl }}</pre>
+                            </div>
+                            {% endif %}
+
+                            {% if f.poc_url and f.http_method == 'GET' %}
+                            <div class="poc-block mt-2">
+                                <div class="poc-label"><i class="bi bi-link-45deg"></i> Request URL
+                                    <button type="button" class="copy-btn" data-copy="url-{{ f.id }}"><i class="bi bi-clipboard"></i> copy</button></div>
+                                <pre class="code-box" id="url-{{ f.id }}">{{ f.poc_url }}</pre>
+                            </div>
+                            {% elif f.poc_body %}
+                            <div class="poc-block mt-2">
+                                <div class="poc-label"><i class="bi bi-link-45deg"></i> POST body
+                                    <button type="button" class="copy-btn" data-copy="body-{{ f.id }}"><i class="bi bi-clipboard"></i> copy</button></div>
+                                <pre class="code-box" id="body-{{ f.id }}">{{ f.poc_body }}</pre>
+                            </div>
+                            {% endif %}
+
+                            {% if f.evidence %}<div class="mt-2"><strong>Evidence</strong><div class="evidence-box mt-1">{{ f.evidence }}</div></div>{% endif %}
+                            {% if f.proof %}<div class="mt-2"><strong>Proof / Server response</strong><div class="evidence-box mt-1">{{ f.proof }}</div></div>{% endif %}
                         </div>
-                        <div class="col-md-4">
-                            <table class="table table-sm mono">
+                        <div class="col-lg-4">
+                            <table class="table table-sm mono mb-2">
                                 {% if f.affected_url %}<tr><td class="text-secondary">URL</td><td class="text-break">{{ f.affected_url }}</td></tr>{% endif %}
                                 {% if f.http_method %}<tr><td class="text-secondary">Method</td><td>{{ f.http_method }}</td></tr>{% endif %}
+                                {% if f.parameter %}<tr><td class="text-secondary">Parameter</td><td class="text-break">{{ f.parameter }}</td></tr>{% endif %}
                                 {% if f.cvss_score %}<tr><td class="text-secondary">CVSS</td><td>{{ f.cvss_score }}</td></tr>{% endif %}
                                 {% if f.cwe %}<tr><td class="text-secondary">CWE</td><td>{{ f.cwe }}</td></tr>{% endif %}
                                 <tr><td class="text-secondary">Confidence</td><td>{{ f.confidence }}</td></tr>
+                                <tr><td class="text-secondary">Detected by</td><td class="text-break">{{ f.detected_by }}</td></tr>
                             </table>
                             {% if f.references %}<div class="small"><strong>References</strong><ul class="ps-3 mb-0">
                                 {% for r in f.references %}<li class="text-break">{% if r|slice:':4' == 'http' %}<a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a>{% else %}{{ r }}{% endif %}</li>{% endfor %}
@@ -276,4 +327,52 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    // Copy-to-clipboard for payload / PoC / URL blocks.
+    document.querySelectorAll(".copy-btn").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            var el = document.getElementById(btn.dataset.copy);
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent).then(function () {
+                var old = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check2"></i> copied';
+                btn.classList.add("copied");
+                setTimeout(function () { btn.innerHTML = old; btn.classList.remove("copied"); }, 1400);
+            });
+        });
+    });
+
+    // Severity filter.
+    var filter = document.getElementById("sevFilter");
+    if (filter) {
+        filter.addEventListener("click", function (e) {
+            var b = e.target.closest("button");
+            if (!b) return;
+            filter.querySelectorAll("button").forEach(x => x.classList.remove("active"));
+            b.classList.add("active");
+            var sev = b.dataset.sev;
+            document.querySelectorAll(".finding-card").forEach(function (c) {
+                c.style.display = (sev === "all" || c.dataset.sev === sev) ? "" : "none";
+            });
+        });
+    }
+
+    // Expand / collapse all.
+    function toggleAll(show) {
+        document.querySelectorAll(".finding-card .collapse").forEach(function (c) {
+            var inst = bootstrap.Collapse.getOrCreateInstance(c, { toggle: false });
+            show ? inst.show() : inst.hide();
+        });
+    }
+    var ea = document.getElementById("expandAll");
+    var ca = document.getElementById("collapseAll");
+    if (ea) ea.addEventListener("click", () => toggleAll(true));
+    if (ca) ca.addEventListener("click", () => toggleAll(false));
+})();
+</script>
 {% endblock %}

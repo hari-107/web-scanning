@@ -112,5 +112,38 @@ a:hover { text-decoration: underline; }
     word-break: break-word; font-family: Consolas, monospace; font-size: .8rem; }
 .phase-pill { background: var(--ws-panel-2); border: 1px solid var(--ws-border);
     border-radius: 2rem; padding: .2rem .8rem; font-size: .78rem; }
+
+/* Finding cards */
+.finding-head { transition: background .15s; }
+.finding-head:hover { background: var(--ws-panel-2); }
+.finding-head .chev { transition: transform .2s; }
+.finding-card:has(.collapse.show) .finding-head .chev { transform: rotate(180deg); }
+
+/* Payload / PoC blocks */
+.poc-block { }
+.poc-label { display: flex; align-items: center; gap: .4rem; font-size: .74rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--ws-low); margin-bottom: .25rem; }
+.code-box { background: #06090f; border: 1px solid var(--ws-border);
+    border-left: 3px solid var(--ws-accent); border-radius: .4rem;
+    padding: .6rem .8rem; margin: 0; white-space: pre-wrap; word-break: break-all;
+    font-family: "Cascadia Code", Consolas, monospace; font-size: .8rem;
+    color: #d6e2f0; }
+.copy-btn { margin-left: auto; background: var(--ws-panel-2);
+    border: 1px solid var(--ws-border); color: var(--ws-info);
+    border-radius: .3rem; font-size: .68rem; padding: .1rem .45rem;
+    cursor: pointer; text-transform: none; letter-spacing: 0; }
+.copy-btn:hover { color: #fff; border-color: var(--ws-accent); }
+.copy-btn.copied { color: #56d364; border-color: #56d364; }
+
+/* Severity filter dots */
+.sev-dot { display: inline-block; width: .6rem; height: .6rem;
+    border-radius: 50%; vertical-align: middle; }
+.sev-dot.sev-critical { background: var(--ws-crit); }
+.sev-dot.sev-high { background: var(--ws-high); }
+.sev-dot.sev-medium { background: var(--ws-med); }
+.sev-dot.sev-low { background: var(--ws-low); }
+.sev-dot.sev-info { background: var(--ws-info); }
+#sevFilter .btn.active { background: var(--ws-panel-2); border-color: var(--ws-accent); }
 .spin { animation: spin 1.4s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }

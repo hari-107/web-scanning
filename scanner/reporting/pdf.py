@@ -230,8 +230,17 @@ def _findings(story, ss, scan: Scan):
                            ("Remediation", f.remediation)):
             if val:
                 story.append(Paragraph(f"<b>{label}.</b> {_esc(val)}", ss["WSBody"]))
-        for label, val in (("Evidence", f.evidence), ("Proof", f.proof),
-                           ("Payload", f.payload)):
+        # Payload + reproducible proof-of-concept in shaded code boxes.
+        if f.payload:
+            story.append(Paragraph("<b>Payload:</b>", ss["WSSmall"]))
+            story.append(_code_box(f.payload))
+        if f.poc_curl:
+            story.append(Paragraph("<b>Proof of Concept (curl):</b>", ss["WSSmall"]))
+            story.append(_code_box(f.poc_curl))
+        elif f.poc_url and (f.http_method or "GET").upper() == "GET":
+            story.append(Paragraph("<b>Request URL:</b>", ss["WSSmall"]))
+            story.append(_code_box(f.poc_url))
+        for label, val in (("Evidence", f.evidence), ("Proof / Response", f.proof)):
             if val:
                 story.append(Paragraph(f"<b>{label}:</b>", ss["WSSmall"]))
                 story.append(Paragraph(_esc(val)[:900], ss["WSMono"]))
@@ -284,6 +293,28 @@ def _grid(data, col_widths):
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("TOPPADDING", (0, 0), (-1, -1), 3),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]))
+    return t
+
+
+_CODE_STYLE = ParagraphStyle(
+    "WSCode", fontName="Courier", fontSize=8, leading=11,
+    textColor=colors.HexColor("#0b1f3a"),
+)
+
+
+def _code_box(text: str):
+    """A shaded, bordered single-cell box for payloads / PoC commands."""
+    para = Paragraph(_esc(text)[:1200], _CODE_STYLE)
+    t = Table([[para]], colWidths=[165 * mm])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#eef2f7")),
+        ("LINEBEFORE", (0, 0), (0, -1), 2, colors.HexColor("#1f6feb")),
+        ("BOX", (0, 0), (-1, -1), 0.3, colors.HexColor("#d0d7de")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
     return t
 

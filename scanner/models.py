@@ -7,6 +7,9 @@ are involved -- anyone can browse, search, rescan, or delete reports.
 """
 from __future__ import annotations
 
+import shlex
+from urllib.parse import quote, urlencode
+
 from django.db import models
 from django.utils import timezone
 
@@ -178,6 +181,45 @@ class Finding(models.Model):
     @property
     def severity_rank(self) -> int:
         return SEVERITY_ORDER.get(self.severity, 99)
+
+    # -- reproducible proof-of-concept ------------------------------------
+    # These are computed from method/url/parameter/payload so they work on
+    # findings that were stored before PoCs existed (no migration needed).
+    @property
+    def poc_url(self) -> str:
+        """For GET findings, the full URL with the payload in the parameter."""
+        if not self.affected_url:
+            return ""
+        if (self.http_method or "GET").upper() != "GET" or not self.parameter:
+            return self.affected_url
+        sep = "&" if "?" in self.affected_url else "?"
+        return f"{self.affected_url}{sep}{quote(self.parameter)}=" \
+               f"{quote(self.payload or '')}"
+
+    @property
+    def poc_body(self) -> str:
+        """For POST findings, the url-encoded request body."""
+        method = (self.http_method or "GET").upper()
+        if method != "POST" or not self.parameter:
+            return ""
+        # A finding may cover several fields (e.g. "username/password").
+        fields = [p.strip() for p in self.parameter.split("/") if p.strip()]
+        return urlencode({f: self.payload or "" for f in fields})
+
+    @property
+    def poc_curl(self) -> str:
+        """A copy-paste curl command that reproduces the finding."""
+        if not self.affected_url:
+            return ""
+        method = (self.http_method or "GET").upper()
+        if method == "POST":
+            body = self.poc_body or urlencode(
+                {self.parameter or "param": self.payload or ""})
+            return (f"curl -i -X POST {shlex.quote(self.affected_url)} "
+                    f"-d {shlex.quote(body)}")
+        # GET (and OPTIONS etc.) -- include -X for non-GET verbs.
+        verb = "" if method == "GET" else f"-X {method} "
+        return f"curl -i {verb}{shlex.quote(self.poc_url or self.affected_url)}"
 
 
 class Port(models.Model):
