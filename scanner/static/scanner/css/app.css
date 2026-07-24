@@ -1,0 +1,116 @@
+:root {
+    --ws-bg: #0d1117;
+    --ws-panel: #161b22;
+    --ws-panel-2: #1c2230;
+    --ws-border: #2a3242;
+    --ws-accent: #2f81f7;
+    --ws-crit: #f85149;
+    --ws-high: #ff7b39;
+    --ws-med: #e3b341;
+    --ws-low: #58a6ff;
+    --ws-info: #8b949e;
+}
+
+body {
+    background: var(--ws-bg);
+    color: #c9d1d9;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main { flex: 1 0 auto; }
+
+.ws-navbar {
+    background: linear-gradient(90deg, #0b1220, #131a2b);
+    border-bottom: 1px solid var(--ws-border);
+}
+.ws-footer { border-top: 1px solid var(--ws-border); background: #0b0f16; }
+
+.ws-card {
+    background: var(--ws-panel);
+    border: 1px solid var(--ws-border);
+    border-radius: .6rem;
+}
+.ws-card .card-header {
+    background: var(--ws-panel-2);
+    border-bottom: 1px solid var(--ws-border);
+    font-weight: 600;
+}
+
+.stat-card {
+    background: var(--ws-panel);
+    border: 1px solid var(--ws-border);
+    border-radius: .6rem;
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+}
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+.stat-card .stat-label { color: var(--ws-info); font-size: .8rem;
+    text-transform: uppercase; letter-spacing: .05em; }
+.stat-card .stat-icon { font-size: 1.6rem; opacity: .8; }
+
+/* Severity chips */
+.sev-badge { font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    padding: .2rem .5rem; border-radius: .35rem; letter-spacing: .03em; }
+.sev-critical { background: rgba(248,81,73,.18); color: var(--ws-crit);
+    border: 1px solid var(--ws-crit); }
+.sev-high { background: rgba(255,123,57,.16); color: var(--ws-high);
+    border: 1px solid var(--ws-high); }
+.sev-medium { background: rgba(227,179,65,.16); color: var(--ws-med);
+    border: 1px solid var(--ws-med); }
+.sev-low { background: rgba(88,166,255,.16); color: var(--ws-low);
+    border: 1px solid var(--ws-low); }
+.sev-info { background: rgba(139,148,158,.16); color: var(--ws-info);
+    border: 1px solid var(--ws-info); }
+
+.border-left-critical { border-left: 4px solid var(--ws-crit) !important; }
+.border-left-high { border-left: 4px solid var(--ws-high) !important; }
+.border-left-medium { border-left: 4px solid var(--ws-med) !important; }
+.border-left-low { border-left: 4px solid var(--ws-low) !important; }
+.border-left-info { border-left: 4px solid var(--ws-info) !important; }
+
+/* Score ring */
+.score-ring {
+    width: 150px; height: 150px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; margin: 0 auto;
+}
+.score-ring .score-num { font-size: 2.4rem; font-weight: 800; }
+.score-ring .score-cap { font-size: .7rem; color: var(--ws-info);
+    text-transform: uppercase; }
+
+/* Live console */
+.ws-console {
+    background: #06090f; border: 1px solid var(--ws-border);
+    border-radius: .5rem; font-family: "Cascadia Code", Consolas, monospace;
+    font-size: .82rem; padding: .75rem 1rem; height: 460px; overflow-y: auto;
+}
+.ws-console .ln { white-space: pre-wrap; word-break: break-word; margin: 0; }
+.ln-info { color: #9db4d0; }
+.ln-success { color: #56d364; }
+.ln-warning { color: var(--ws-med); }
+.ln-error { color: var(--ws-crit); }
+.ln-cmd { color: #79c0ff; }
+.ln .phase { color: #6e7681; }
+
+.progress { background: #0b0f16; border: 1px solid var(--ws-border); }
+
+.table { --bs-table-bg: transparent; color: #c9d1d9; }
+.table > :not(caption) > * > * { border-color: var(--ws-border); }
+.table thead th { color: var(--ws-info); text-transform: uppercase;
+    font-size: .72rem; letter-spacing: .04em; }
+
+a { color: var(--ws-low); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.finding-body { display: none; }
+.finding-row.open .finding-body { display: table-row; }
+.mono { font-family: Consolas, monospace; font-size: .82rem; }
+.evidence-box { background: #06090f; border: 1px solid var(--ws-border);
+    border-radius: .4rem; padding: .6rem .8rem; white-space: pre-wrap;
+    word-break: break-word; font-family: Consolas, monospace; font-size: .8rem; }
+.phase-pill { background: var(--ws-panel-2); border: 1px solid var(--ws-border);
+    border-radius: 2rem; padding: .2rem .8rem; font-size: .78rem; }
+.spin { animation: spin 1.4s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }

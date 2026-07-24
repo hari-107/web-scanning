@@ -1,0 +1,68 @@
+{% extends "scanner/base.html" %}
+{% load static %}
+{% block title %}Scanning {{ scan.target_url }} &middot; WebSec Scanner{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-radar text-info spin" id="radarIcon"></i>
+            Scan #{{ scan.id }}</h4>
+        <div class="text-secondary small text-truncate" style="max-width:60vw">{{ scan.target_url }}</div>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="phase-pill" id="statusPill">{{ scan.get_status_display }}</span>
+        <a href="{% url 'report' scan.id %}" class="btn btn-outline-info btn-sm d-none" id="reportBtn">
+            <i class="bi bi-file-earmark-text"></i> View Report</a>
+    </div>
+</div>
+
+<div class="ws-card p-4 mb-3">
+    <div class="d-flex justify-content-between mb-1">
+        <span id="phaseLabel" class="fw-semibold">{{ scan.phase }}</span>
+        <span id="progressPct">{{ scan.progress }}%</span>
+    </div>
+    <div class="progress" style="height: 14px;">
+        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+             role="progressbar" style="width: {{ scan.progress }}%"></div>
+    </div>
+    <div class="row mt-3 text-center g-2">
+        <div class="col"><div class="fs-5 fw-bold" id="mTasks">0/0</div><div class="stat-label">Modules</div></div>
+        <div class="col"><div class="fs-5 fw-bold" id="mReq">0</div><div class="stat-label">Requests</div></div>
+        <div class="col"><div class="fs-5 fw-bold" id="mUrls">0</div><div class="stat-label">URLs</div></div>
+        <div class="col"><div class="fs-5 fw-bold" id="mElapsed">0s</div><div class="stat-label">Elapsed</div></div>
+        <div class="col"><div class="fs-5 fw-bold" id="mEta">-</div><div class="stat-label">Est. left</div></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="ws-card">
+            <div class="card-header d-flex justify-content-between">
+                <span><i class="bi bi-terminal-fill"></i> Live Execution Log</span>
+                <span class="small text-secondary" id="currentTask"></span>
+            </div>
+            <div class="card-body">
+                <div class="ws-console" id="console"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="ws-card">
+            <div class="card-header"><i class="bi bi-clipboard-data"></i> Live Findings</div>
+            <ul class="list-group list-group-flush" id="sevList">
+                <li class="list-group-item bg-transparent d-flex justify-content-between"><span class="sev-badge sev-critical">Critical</span><span id="c-critical">0</span></li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between"><span class="sev-badge sev-high">High</span><span id="c-high">0</span></li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between"><span class="sev-badge sev-medium">Medium</span><span id="c-medium">0</span></li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between"><span class="sev-badge sev-low">Low</span><span id="c-low">0</span></li>
+                <li class="list-group-item bg-transparent d-flex justify-content-between"><span class="sev-badge sev-info">Info</span><span id="c-info">0</span></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script id="scanMeta" type="application/json">{"statusUrl": "{% url 'scan_status' scan.id %}", "done": {% if scan.is_active %}false{% else %}true{% endif %}}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'scanner/js/progress.js' %}"></script>
+{% endblock %}

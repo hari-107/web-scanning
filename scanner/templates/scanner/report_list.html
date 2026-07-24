@@ -1,0 +1,78 @@
+{% extends "scanner/base.html" %}
+{% block title %}Reports &middot; WebSec Scanner{% endblock %}
+
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-folder2-open text-info"></i> Scan Reports</h4>
+
+<div class="ws-card p-3 mb-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-5">
+            <label class="stat-label">Search (URL / host / IP)</label>
+            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="example.com">
+        </div>
+        <div class="col-md-3">
+            <label class="stat-label">Contains severity</label>
+            <select name="severity" class="form-select">
+                <option value="">Any</option>
+                {% for val, label in severity_choices %}
+                    <option value="{{ val }}" {% if val == severity %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="stat-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="">Any</option>
+                {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if val == status %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-info"><i class="bi bi-funnel"></i> Filter</button>
+        </div>
+    </form>
+</div>
+
+<div class="ws-card table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead><tr>
+            <th></th><th>#</th><th>Target</th><th>Status</th><th>Score</th><th>Risk</th>
+            <th>Findings</th><th>Duration</th><th>Date</th><th></th>
+        </tr></thead>
+        <tbody>
+        {% for s in scans %}
+        <tr>
+            <td><input type="checkbox" form="cmpForm" name="scan" value="{{ s.id }}" class="form-check-input"></td>
+            <td>{{ s.id }}</td>
+            <td class="text-truncate" style="max-width:240px"><a href="{% url 'report' s.id %}">{{ s.target_url }}</a></td>
+            <td>
+                {% if s.is_active %}<a href="{% url 'scan_progress' s.id %}" class="badge text-bg-warning">{{ s.get_status_display }}</a>
+                {% elif s.status == 'completed' %}<span class="badge text-bg-success">Completed</span>
+                {% else %}<span class="badge text-bg-secondary">{{ s.get_status_display }}</span>{% endif %}
+            </td>
+            <td>{% if s.status == 'completed' %}<strong>{{ s.security_score }}</strong>{% else %}-{% endif %}</td>
+            <td><span class="sev-badge sev-{{ s.risk_rating }}">{{ s.get_risk_rating_display }}</span></td>
+            <td>{{ s.findings.count }}</td>
+            <td class="small">{{ s.duration_display }}</td>
+            <td class="small text-secondary">{{ s.created_at|date:"Y-m-d H:i" }}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <a href="{% url 'report' s.id %}" class="btn btn-outline-info" title="View"><i class="bi bi-eye"></i></a>
+                    <a href="{% url 'download_pdf' s.id %}" class="btn btn-outline-secondary" title="PDF"><i class="bi bi-file-earmark-pdf"></i></a>
+                    <form method="post" action="{% url 'rescan' s.id %}">{% csrf_token %}<button class="btn btn-outline-success" title="Rescan"><i class="bi bi-arrow-repeat"></i></button></form>
+                    <form method="post" action="{% url 'delete_scan' s.id %}" onsubmit="return confirm('Delete scan #{{ s.id }}?');">{% csrf_token %}<button class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button></form>
+                </div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="text-center text-secondary py-4">No scans match your filters.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<form method="get" action="{% url 'compare' %}" id="cmpForm" class="mt-3">
+    <button class="btn btn-outline-info btn-sm"><i class="bi bi-bar-chart-steps"></i> Compare selected (2-4)</button>
+</form>
+{% endblock %}

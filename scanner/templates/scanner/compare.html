@@ -1,0 +1,51 @@
+{% extends "scanner/base.html" %}
+{% load scanner_extras %}
+{% block title %}Compare Scans &middot; WebSec Scanner{% endblock %}
+
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-bar-chart-steps text-info"></i> Compare Scans</h4>
+
+<div class="ws-card p-3 mb-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-10">
+            <label class="stat-label">Select 2-4 completed scans</label>
+            <select name="scan" class="form-select" multiple size="6">
+                {% for s in all_scans %}
+                    <option value="{{ s.id }}" {% if s in scans %}selected{% endif %}>
+                        #{{ s.id }} &middot; {{ s.target_url }} &middot; score {{ s.security_score }} &middot; {{ s.created_at|date:"Y-m-d" }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-info">Compare</button>
+        </div>
+    </form>
+</div>
+
+{% if scans %}
+<div class="ws-card table-responsive">
+    <table class="table mb-0">
+        <thead><tr>
+            <th>Metric</th>
+            {% for s in scans %}<th>#{{ s.id }}<div class="small text-secondary text-truncate" style="max-width:180px">{{ s.target_url }}</div></th>{% endfor %}
+        </tr></thead>
+        <tbody>
+            <tr><td>Security Score</td>{% for s in scans %}<td><strong>{{ s.security_score }}</strong>/100</td>{% endfor %}</tr>
+            <tr><td>Risk Rating</td>{% for s in scans %}<td><span class="sev-badge sev-{{ s.risk_rating }}">{{ s.get_risk_rating_display }}</span></td>{% endfor %}</tr>
+            {% for sev, label in severity_labels.items %}
+            <tr><td><span class="sev-badge sev-{{ sev }}">{{ label }}</span></td>
+                {% for s in scans %}<td>{{ s.sev|get_item:sev }}</td>{% endfor %}</tr>
+            {% endfor %}
+            <tr><td>URLs Discovered</td>{% for s in scans %}<td>{{ s.total_urls_discovered }}</td>{% endfor %}</tr>
+            <tr><td>Requests</td>{% for s in scans %}<td>{{ s.total_requests }}</td>{% endfor %}</tr>
+            <tr><td>Duration</td>{% for s in scans %}<td>{{ s.duration_display }}</td>{% endfor %}</tr>
+            <tr><td>Date</td>{% for s in scans %}<td class="small">{{ s.created_at|date:"Y-m-d H:i" }}</td>{% endfor %}</tr>
+            <tr><td></td>{% for s in scans %}<td><a href="{% url 'report' s.id %}" class="btn btn-sm btn-outline-info">Open</a></td>{% endfor %}</tr>
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="ws-card p-5 text-center text-secondary">Select scans above to compare them side by side.</div>
+{% endif %}
+{% endblock %}

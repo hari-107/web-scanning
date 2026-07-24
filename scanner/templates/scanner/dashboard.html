@@ -1,0 +1,146 @@
+{% extends "scanner/base.html" %}
+{% load static %}
+{% block title %}Dashboard &middot; WebSec Scanner{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="ws-card p-4">
+            <h4 class="mb-1"><i class="bi bi-radar text-info"></i> New Security Assessment</h4>
+            <p class="text-secondary mb-3">Enter a target URL and start a full automated assessment.</p>
+            <form method="post" action="{% url 'start_scan' %}" id="scanForm">
+                {% csrf_token %}
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-8">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><i class="bi bi-globe2"></i></span>
+                            <input type="text" name="target_url" class="form-control"
+                                   placeholder="https://example.com" required autofocus>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-grid">
+                        <button type="submit" class="btn btn-info btn-lg fw-semibold">
+                            <i class="bi bi-play-circle-fill"></i> Start Scan
+                        </button>
+                    </div>
+                </div>
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" name="authorized" id="authorized" required>
+                    <label class="form-check-label small text-secondary" for="authorized">
+                        I confirm I am authorised to perform a security assessment of this target.
+                        This tool sends active probes; only scan systems you own or have written permission to test.
+                    </label>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card d-flex justify-content-between align-items-start">
+            <div><div class="stat-value">{{ total_scans }}</div><div class="stat-label">Total Scans</div></div>
+            <i class="bi bi-search stat-icon text-info"></i>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card d-flex justify-content-between align-items-start">
+            <div><div class="stat-value">{{ total_findings }}</div><div class="stat-label">Total Findings</div></div>
+            <i class="bi bi-bug-fill stat-icon text-danger"></i>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card d-flex justify-content-between align-items-start">
+            <div><div class="stat-value">{{ active_scans }}</div><div class="stat-label">Active Scans</div></div>
+            <i class="bi bi-activity stat-icon text-warning"></i>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card d-flex justify-content-between align-items-start">
+            <div><div class="stat-value">{{ avg_score }}<span class="fs-6 text-secondary">/100</span></div><div class="stat-label">Avg. Security Score</div></div>
+            <i class="bi bi-speedometer stat-icon text-success"></i>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-5">
+        <div class="ws-card h-100">
+            <div class="card-header"><i class="bi bi-pie-chart-fill"></i> Severity Distribution</div>
+            <div class="card-body"><canvas id="severityChart" height="220"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="ws-card h-100">
+            <div class="card-header"><i class="bi bi-bar-chart-fill"></i> Risk Rating (completed scans)</div>
+            <div class="card-body"><canvas id="riskChart" height="220"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="ws-card">
+            <div class="card-header d-flex justify-content-between">
+                <span><i class="bi bi-clock-history"></i> Recent Scans</span>
+                <a href="{% url 'report_list' %}" class="small">View all</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>#</th><th>Target</th><th>Status</th><th>Score</th><th>Risk</th><th>When</th></tr></thead>
+                    <tbody>
+                    {% for s in recent_scans %}
+                        <tr>
+                            <td>{{ s.id }}</td>
+                            <td class="text-truncate" style="max-width:220px">
+                                <a href="{% url 'report' s.id %}">{{ s.target_url }}</a></td>
+                            <td>
+                                {% if s.status == 'running' or s.status == 'queued' %}
+                                    <a href="{% url 'scan_progress' s.id %}" class="badge text-bg-warning">{{ s.get_status_display }}</a>
+                                {% elif s.status == 'completed' %}
+                                    <span class="badge text-bg-success">{{ s.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">{{ s.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if s.status == 'completed' %}{{ s.security_score }}{% else %}-{% endif %}</td>
+                            <td><span class="sev-badge sev-{{ s.risk_rating }}">{{ s.get_risk_rating_display }}</span></td>
+                            <td class="small text-secondary">{{ s.created_at|date:"m/d H:i" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-secondary py-4">No scans yet. Start one above.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="ws-card">
+            <div class="card-header"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Recent Critical/High Findings</div>
+            <ul class="list-group list-group-flush">
+                {% for f in recent_findings %}
+                    <li class="list-group-item bg-transparent border-bottom border-secondary-subtle">
+                        <div class="d-flex justify-content-between">
+                            <span class="sev-badge sev-{{ f.severity }}">{{ f.get_severity_display }}</span>
+                            <a href="{% url 'report' f.scan_id %}" class="small">scan #{{ f.scan_id }}</a>
+                        </div>
+                        <div class="mt-1">{{ f.title }}</div>
+                        <div class="small text-secondary text-truncate">{{ f.affected_url }}</div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item bg-transparent text-secondary text-center py-4">No high-risk findings yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+{{ severity_stats|json_script:"sevData" }}
+{{ risk_stats|json_script:"riskData" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'scanner/js/charts.js' %}"></script>
+<script>renderDashboardCharts();</script>
+{% endblock %}
